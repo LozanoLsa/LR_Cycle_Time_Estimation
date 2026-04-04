@@ -171,24 +171,6 @@ jupyter notebook 07_LR_Cycle_Time_Riveting.ipynb
 
 > Or click the badge above to run it directly in Google Colab — no installation needed.
 
-**Notebook structure:**
-
-| Section | Content |
-|---|---|
-| 1 | Setup & imports |
-| 2 | Load data |
-| 3 | Sanity checks |
-| 4 | Exploratory data analysis |
-| 5 | Preprocessing & train/test split |
-| 6 | Model training (OLS · Ridge · Lasso · ElasticNet) |
-| 7 | Model evaluation (metrics · predicted vs measured · residuals) |
-| 8 | Interpretability (coefficients · SHAP · 2D response surface) |
-| 9 | Statistical assumption validation (normality · DW · GQ · VIF) |
-| 10 | Process simulator (3 scenarios · optimal recipe grid search) |
-| 11 | Final reflection |
-
----
-
 ## 💡 Key Learnings
 
 1. **Interpretability is a design goal, not a consolation prize.** A coefficient of +0.183 mm/mm is not a "simple" result — it is a direct translation of physics into a number an engineer can act on.
