@@ -12,7 +12,7 @@
 
 Every rivet head is a negotiation between material, force, and time. Get the combination wrong and the joint is either too weak to carry load or too large to fit the adjacent panel — and you find out after the press has fired, not before.
 
-This project builds a linear regression model trained on 1,500 press cycles that predicts the formed rivet head diameter from six process inputs. The model is deliberately interpretable: every coefficient maps to an engineering lever an operator can actually touch. No black box. Just physics, quantified.
+This project builds a linear regression model trained on 1,763 press cycles spanning two production shifts and three rivet size families that predicts the formed rivet head diameter from six process inputs. The model is deliberately interpretable: every coefficient maps to an engineering lever an operator can actually touch. No black box. Just physics, quantified.
 
 No magic. Just coefficients.
 
@@ -95,19 +95,19 @@ OLS was selected as the production model. Its coefficients are unbiased, directl
 
 | Metric | Value | Operational Meaning |
 |---|---|---|
-| **R²** | **0.943** | 94.3% of head-diameter variance explained by six process inputs |
-| **RMSE** | **0.062 mm** | Typical prediction error — 6.2% of the 1.0 mm spec window |
-| **MAE** | **0.051 mm** | Median absolute error — within most press measurement system resolution |
-| **Baseline R²** | −0.009 | Naïve mean model performs no better than chance |
-| **Train / Test** | 1,200 / 300 cycles | 80/20 split, `random_state=42` |
+| **R²** | **0.909** | 90.9% of head-diameter variance explained by six process inputs |
+| **RMSE** | **0.081 mm** | Typical prediction error — 8.1% of the 1.0 mm spec window |
+| **MAE** | **0.065 mm** | Median absolute error — within most press measurement system resolution |
+| **Baseline R²** | −0.011 | Naïve mean model performs no better than chance |
+| **Train / Test** | 1,410 / 353 cycles | 80/20 split, `random_state=42` |
 
 ### Feature Coefficients — Engineering Levers
 
 | Feature | Coefficient | Direction | Engineering Interpretation |
 |---|---|---|---|
-| `rivet_diameter_mm` | +0.183 mm/mm | ↑ Increases diameter | Dominant driver — more shank material → larger formed head |
-| `press_stroke_mm` | +0.080 mm/mm | ↑ Increases diameter | Primary controllable lever for recipe tuning |
-| `press_force_kn` | +0.020 mm/kN | ↑ Increases diameter | Secondary lever — fine-tune force within recipe |
+| `rivet_diameter_mm` | +0.186 mm/mm | ↑ Increases diameter | Dominant driver — more shank material → larger formed head |
+| `press_stroke_mm` | +0.075 mm/mm | ↑ Increases diameter | Primary controllable lever for recipe tuning |
+| `press_force_kn` | +0.019 mm/kN | ↑ Increases diameter | Secondary lever — fine-tune force within recipe |
 | `rivet_length_mm` | +0.004 mm/mm | ↑ Increases diameter | Small but consistent at high volume |
 | `temperature_c` | +0.003 mm/°C | ↑ Increases diameter | Thermal expansion compounds across thousands of cycles |
 | `hold_time_ms` | +0.0002 mm/ms | ↑ Increases diameter | Minimal — creep effect at extreme dwell times only |
@@ -134,9 +134,9 @@ The 2D response surface (Section 8) extends this into a full process design map:
 
 1. **Rivet diameter is the dominant variable.** Switching shank size without recalculating the recipe is the most common source of out-of-spec heads. The model makes this miscalibration visible before the press fires.
 
-2. **51.9% overall spec compliance hides a 5 mm problem.** The 4 mm rivet family achieves 55.7% in-spec; the 5 mm family drops to 39.9%. The current process is not calibrated for larger rivets.
+2. **50.7% overall spec compliance hides a 5 mm problem.** The 4 mm rivet family achieves 55.0% in-spec; the 5 mm family drops to 38.8%. The current process is not calibrated for larger rivets.
 
-3. **Force and stroke are the levers.** Combined coefficient of +0.080 (stroke) and +0.020 (force) means a 1 mm stroke increase raises head diameter by the same amount as a 4 kN force increase — useful for recipe trade-off decisions.
+3. **Force and stroke are the levers.** Combined coefficient of +0.075 (stroke) and +0.019 (force) means a 1 mm stroke increase raises head diameter by roughly the same as a ~4 kN force increase — useful for recipe trade-off decisions.
 
 4. **Environmental drift is quantifiable.** A 10°C temperature swing adds 0.027 mm to predicted head diameter. Across a summer production ramp, this is not negligible — and the model gives the SPC team a physical basis for tightening control limits seasonally.
 
@@ -149,14 +149,13 @@ The 2D response surface (Section 8) extends this into a full process design map:
 ```
 LR_Cycle_Time_Estimation/
 ├── 07_LR_Cycle_Time_Riveting.ipynb   ← Main notebook (12 sections)
-├── lr_riveting_data.csv              ← 250-row sample dataset (GitHub public)
+├── lr_riveting_data.csv              ← Complete 1,763-cycle dataset
 ├── requirements.txt                   ← Python dependencies
 ├── 07_LR_Riveting_Head_Diameter.pdf  ← Slide deck (PDF export)
 └── README.md                          ← This file
 ```
 
-> **Complete pack on Gumroad:** Full 1,500-row dataset · Streamlit simulator app · PPTX slide deck
-> 📦 **Full Project Pack** — complete dataset (1,500 batches), notebook with full outputs including Gini vs Permutation comparison charts, presentation deck (PPTX + PDF), and `app.py` pre-batch risk simulator available on [Gumroad](https://lozanolsa.gumroad.com).
+> 📦 **Full Project Pack** — complete 1,763-cycle dataset, notebook with full outputs, presentation deck (PPTX + PDF), and `app.py` pre-cycle recipe simulator available on [Gumroad](https://lozanolsa.gumroad.com).
 
 ---
 
@@ -171,17 +170,35 @@ jupyter notebook 07_LR_Cycle_Time_Riveting.ipynb
 
 > Or click the badge above to run it directly in Google Colab — no installation needed.
 
+**Notebook structure:**
+
+| Section | Content |
+|---|---|
+| 1 | Setup & imports |
+| 2 | Load data |
+| 3 | Sanity checks |
+| 4 | Exploratory data analysis |
+| 5 | Preprocessing & train/test split |
+| 6 | Model training (OLS · Ridge · Lasso · ElasticNet) |
+| 7 | Model evaluation (metrics · predicted vs measured · residuals) |
+| 8 | Interpretability (coefficients · SHAP · 2D response surface) |
+| 9 | Statistical assumption validation (normality · DW · GQ · VIF) |
+| 10 | Process simulator (3 scenarios · optimal recipe grid search) |
+| 11 | Final reflection |
+
+---
+
 ## 💡 Key Learnings
 
 1. **Interpretability is a design goal, not a consolation prize.** A coefficient of +0.183 mm/mm is not a "simple" result — it is a direct translation of physics into a number an engineer can act on.
 
 2. **When regularisation adds nothing, the features are honest.** Ridge, Lasso, and ElasticNet all converge to OLS performance here. This means every input variable carries genuine, non-redundant signal worth keeping.
 
-3. **R² of 0.943 is extraordinary for a physical process with real measurement noise.** It means the six press parameters capture almost all of the explainable variation in head diameter. The remaining 5.7% is measurement system error and micro-variation in material — not model failure.
+3. **R² of 0.909 is strong for a multi-shift physical process.** It means the six press parameters explain 90.9% of the variation in head diameter across two production shifts and three rivet families. The remaining 9.1% represents genuine process scatter — inter-shift tooling variation, material batch effects, and CMM measurement noise that no recipe model can eliminate.
 
 4. **The 2D response surface turns a model into a tool.** The ability to visually read the in-spec operating region for any rivet size transforms regression from a passive estimator into an active process design instrument.
 
-5. **Prediction before the press fires is the entire value proposition.** The RMSE of 0.062 mm is smaller than most CMM measurement system resolutions. The model is not just accurate — it is accurate enough to be operationally useful at the point where decisions are made.
+5. **Prediction before the press fires is the entire value proposition.** The RMSE of 0.081 mm — 8.1% of the 1.0 mm spec window — is operationally useful at the point where recipe decisions are made, even if it does not reach CMM-level precision.
 
 ---
 
